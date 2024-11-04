@@ -38,7 +38,8 @@
     }
   ],
   "features": {
-    "ecommerce": true,
-    "authentication": false
+    "Authentication": true,
+    "Payment Processor": true,
+    "Tracking Pixel": true
   }
 }
