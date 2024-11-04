@@ -38,8 +38,25 @@
     }
   ],
   "features": {
-    "Authentication": true,
-    "Payment Processor": true,
-    "Tracking Pixel": true
+    "Authentication": {
+      "enabled": true,
+      "dependencies": {
+        "jsonwebtoken": "^8.5.1",
+        "bcryptjs": "^2.4.3",
+        "express-session": "^1.17.2"
+      }
+    },
+    "Payment Processor": {
+      "enabled": true,
+      "dependencies": {
+        "stripe": "^8.2.0"
+      }
+    },
+    "Tracking Pixel": {
+      "enabled": true,
+      "dependencies": {
+        "react-gtag": "^8.1.0"
+      }
+    }
   }
 }

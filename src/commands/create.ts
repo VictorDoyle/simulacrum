@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import fs from 'fs-extra';
 import path from 'path';
 import { execSync } from 'child_process';
-import inquirer from 'inquirer';
+import inquirer from 'inquirer'; // Install inquirer for prompts
 
 interface TemplateConfig {
   name: string;
@@ -11,7 +11,7 @@ interface TemplateConfig {
   devDependencies: Record<string, string>;
   scripts: Record<string, string>;
   routes: Array<{ path: string; component: string }>;
-  features: Record<string, boolean>;
+  features: Record<string, { enabled: boolean; dependencies: Record<string, string> }>;
 }
 
 async function promptUserForProjectDetails(features: string[]) {
@@ -38,7 +38,6 @@ async function promptUserForProjectDetails(features: string[]) {
       type: 'checkbox',
       name: 'features',
       message: 'Select features to include:',
-      // dynamic from template.json
       choices: features,
     },
     {
@@ -69,6 +68,23 @@ export async function create(templateName: string, projectName: string, isTypesc
     const featureNames = Object.keys(templateConfig.features).filter(feature => templateConfig.features[feature]);
     const projectDetails = await promptUserForProjectDetails(featureNames);
 
+    const selectedFeatures = projectDetails.features;
+
+    // init base deps before addons
+    const additionalDependencies: Record<string, string> = {
+      ...templateConfig.dependencies,
+      ...templateConfig.devDependencies
+    };
+
+    // add deps based on features added in build step
+    selectedFeatures.forEach((feature: string) => {
+      if (templateConfig.features[feature] && templateConfig.features[feature].enabled) {
+        const featureDeps = templateConfig.features[feature].dependencies;
+        console.log(chalk.blue(`Adding dependencies for feature: ${feature}`), featureDeps);
+        Object.assign(additionalDependencies, featureDeps);
+      }
+    });
+
     console.log(chalk.blue(`Creating project directory: ${projectName}`));
     await fs.mkdir(targetPath);
 
@@ -84,7 +100,7 @@ export async function create(templateName: string, projectName: string, isTypesc
       description: projectDetails.description,
       author: projectDetails.author,
       license: projectDetails.license,
-      dependencies: templateConfig.dependencies,
+      dependencies: additionalDependencies,
       devDependencies: templateConfig.devDependencies,
       scripts: templateConfig.scripts,
     };
