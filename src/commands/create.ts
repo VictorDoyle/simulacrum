@@ -14,13 +14,11 @@ interface TemplateConfig {
 }
 
 export async function create(templateName: string, projectName: string, isTypescript: boolean) {
-  // some templates will have a -js and -ts suffix for user choice 
   const typeSuffix = isTypescript ? '-ts' : '-js';
   const templatePath = path.join(__dirname, '..', 'templates', templateName + typeSuffix);
   const targetPath = path.resolve(process.cwd(), projectName);
 
   try {
-    // read config for specific template
     const templateJsonPath = path.join(templatePath, 'template.json');
     console.log(chalk.blue('Reading template configuration...'));
 
@@ -32,7 +30,6 @@ export async function create(templateName: string, projectName: string, isTypesc
     console.log(chalk.blue(`Creating project directory: ${projectName}`));
     await fs.mkdir(targetPath);
 
-    // copy over template files -- keep this for v1 && bypass build
     console.log(chalk.blue('Copying template files...'));
     const templateFilesPath = path.join(templatePath, 'template');
     await fs.copy(templateFilesPath, targetPath, { overwrite: true });
@@ -53,18 +50,31 @@ export async function create(templateName: string, projectName: string, isTypesc
       { spaces: 2 }
     );
 
-    // install deps
-    console.log(chalk.blue('\nInstalling dependencies...\n'));
+    // check dependency install location 
+    console.log(chalk.blue('Installing all dependencies in:'), targetPath);
     execSync('npm install', { stdio: 'inherit', cwd: targetPath });
 
+    // checkmark each dependency to be 100% sure all is installed
+    // TODO: build retry when install fails or defer until template loaded then webpack build
+    const allDependencies = { ...templateConfig.dependencies, ...templateConfig.devDependencies };
+    console.log(chalk.blue('\nVerifying installed dependencies:'));
+    for (const dep of Object.keys(allDependencies)) {
+      const depPath = path.join(targetPath, 'node_modules', dep);
+      if (fs.existsSync(depPath)) {
+        console.log(chalk.green(`✓ ${dep} installed successfully`));
+      } else {
+        console.log(chalk.red(`✗ ${dep} failed to install`));
+      }
+    }
+
     console.log(chalk.green('\n✨ Project created successfully!'));
+    console.log(chalk.underline("You've saved between 5 to 360 minutes making a website's basic setup "))
     console.log('\nTo get started:');
     console.log(chalk.cyan(`\n  cd ${projectName}`));
     console.log(chalk.cyan('  npm start\n'));
 
   } catch (error) {
     console.error(chalk.red('Error creating project:'), error);
-    // if failed then cleanup
     if (fs.existsSync(targetPath)) {
       await fs.remove(targetPath);
     }
