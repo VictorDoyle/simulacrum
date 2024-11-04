@@ -21,7 +21,7 @@
   "routes": [
     {
       "path": "/",
-      "component": "Homepage"
+      "component": "Home"
     }
   ],
   "features": {
